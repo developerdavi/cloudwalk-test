@@ -10,10 +10,11 @@ import (
 )
 
 type Match struct {
-	TotalKills uint           `json:"total_kills"`
-	Players    []string       `json:"players"`
-	Kills      map[string]int `json:"kills"`
-	Ranking    []string       `json:"ranking"`
+	TotalKills   uint           `json:"total_kills"`
+	Players      []string       `json:"players"`
+	Kills        map[string]int `json:"kills"`
+	Ranking      []string       `json:"ranking"`
+	KillsByMeans map[string]int `json:"kills_by_means"`
 }
 
 type LineType uint8
@@ -25,6 +26,38 @@ const (
 	Kill
 	ClientUserinfoChanged
 )
+
+var Causes = [...]string{
+	"MOD_UNKNOWN",
+	"MOD_SHOTGUN",
+	"MOD_GAUNTLET",
+	"MOD_MACHINEGUN",
+	"MOD_GRENADE",
+	"MOD_GRENADE_SPLASH",
+	"MOD_ROCKET",
+	"MOD_ROCKET_SPLASH",
+	"MOD_PLASMA",
+	"MOD_PLASMA_SPLASH",
+	"MOD_RAILGUN",
+	"MOD_LIGHTNING",
+	"MOD_BFG",
+	"MOD_BFG_SPLASH",
+	"MOD_WATER",
+	"MOD_SLIME",
+	"MOD_LAVA",
+	"MOD_CRUSH",
+	"MOD_TELEFRAG",
+	"MOD_FALLING",
+	"MOD_SUICIDE",
+	"MOD_TARGET_LASER",
+	"MOD_TRIGGER_HURT",
+	"MOD_NAIL",
+	"MOD_CHAINGUN",
+	"MOD_PROXIMITY_MINE",
+	"MOD_KAMIKAZE",
+	"MOD_JUICED",
+	"MOD_GRAPPLE",
+}
 
 type Death struct {
 	killer string
@@ -94,6 +127,14 @@ func sortKills(match *Match) {
 	match.Ranking = keys
 }
 
+func createKillsByMeans() map[string]int {
+	kills_by_means := make(map[string]int)
+	for _, cause := range Causes {
+		kills_by_means[cause] = 0
+	}
+	return kills_by_means
+}
+
 func Parse() []Match {
 	file, err := os.Open("input/qgames.log")
 
@@ -121,8 +162,9 @@ func Parse() []Match {
 
 		switch line_type {
 		case InitGame:
-			matches = append(matches, Match{TotalKills: 0, Kills: make(map[string]int)})
+			matches = append(matches, Match{TotalKills: 0, Kills: make(map[string]int), KillsByMeans: make(map[string]int)})
 			match = &matches[len(matches)-1]
+			match.KillsByMeans = createKillsByMeans()
 			continue
 		case Kill:
 			death, error := parseKill(line)
@@ -130,6 +172,7 @@ func Parse() []Match {
 				log.Fatal(error)
 			}
 
+			match.KillsByMeans[death.cause]++
 			match.TotalKills++
 
 			if !is_world.MatchString(death.killer) {
