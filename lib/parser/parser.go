@@ -66,7 +66,7 @@ type Death struct {
 }
 
 func parseLine(line string) LineType {
-	action_line := regexp.MustCompile(`\s+\d+:\d+\s(\w+):`)
+	action_line := regexp.MustCompile(`\s*\d+:\d+\s(\w+):`)
 
 	if !action_line.MatchString(line) {
 		return Other
@@ -89,7 +89,7 @@ func parseLine(line string) LineType {
 }
 
 func parseKill(line string) (Death, error) {
-	action_line := regexp.MustCompile(`\s+\d+:\d+\sKill:\s+\d+\s+\d+\s+\d+:\s([a-zA-Z\s<>]+)\skilled\s([a-zA-Z\s]+)\sby\s(MOD_\w*)`)
+	action_line := regexp.MustCompile(`\s*\d+:\d+\sKill:\s+\d+\s+\d+\s+\d+:\s([a-zA-Z\s<>]+)\skilled\s([a-zA-Z\s]+)\sby\s(MOD_\w*)`)
 
 	if !action_line.MatchString(line) {
 		return Death{}, errors.New("invalid kill line: " + line)
@@ -105,7 +105,7 @@ func parseKill(line string) (Death, error) {
 }
 
 func parseClientUserinfoChanged(line string) (string, error) {
-	action_line := regexp.MustCompile(`\s+\d+:\d+\sClientUserinfoChanged:\s+\d+\s+n\\([a-zA-Z\s]+)`)
+	action_line := regexp.MustCompile(`\s*\d+:\d+\sClientUserinfoChanged:\s+\d+\s+n\\([a-zA-Z\s]+)`)
 
 	if !action_line.MatchString(line) {
 		return "", errors.New("invalid userinfo line: " + line)
@@ -135,11 +135,11 @@ func createKillsByMeans() map[string]int {
 	return kills_by_means
 }
 
-func Parse() []Match {
-	file, err := os.Open("input/qgames.log")
+func Parse(path string) ([]Match, error) {
+	file, err := os.Open(path)
 
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	defer file.Close()
@@ -151,15 +151,18 @@ func Parse() []Match {
 
 	is_world := regexp.MustCompile(`<world>`)
 
+	// reading line by line, due to performance reasons
 	for scanner.Scan() {
 		line := scanner.Text()
 
 		line_type := parseLine(line)
 
+		// skip lines that are not relevant
 		if line_type == Other {
 			continue
 		}
 
+		// decide what to do according to the kind of the log
 		switch line_type {
 		case InitGame:
 			matches = append(matches, Match{TotalKills: 0, Kills: make(map[string]int), KillsByMeans: make(map[string]int)})
@@ -201,5 +204,5 @@ func Parse() []Match {
 		}
 	}
 
-	return matches
+	return matches, nil
 }

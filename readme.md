@@ -5,6 +5,20 @@
 - Go
 - Git
 
+## How to run
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/developerdavi/cloudwalk-test
+```
+
+### 2. Run the project
+
+```bash
+go run .
+```
+
 ## Tasks
 
 ### 1. Log parser

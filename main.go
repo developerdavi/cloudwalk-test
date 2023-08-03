@@ -3,17 +3,22 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/developerdavi/cloudwalk-test/lib/parser"
 )
 
 func main() {
-	matches := parser.Parse()
+	matches, err := parser.Parse("input/qgames.log")
 
-	data, error := json.MarshalIndent(matches, "", "  ")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	if error != nil {
-		fmt.Println(error)
+	data, err := json.MarshalIndent(matches, "", "  ")
+
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	fmt.Println(string(data))
